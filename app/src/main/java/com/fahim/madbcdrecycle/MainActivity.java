@@ -32,8 +32,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     EditText enterUsername;
-    Button submitButton;
+    Button submitButton,testCrash;
     TextView resultTextView;
+
     // Write a message to the database
     FirebaseDatabase database = FirebaseDatabase.getInstance();
     DatabaseReference myRef = database.getReference("users");
@@ -50,8 +51,13 @@ public class MainActivity extends AppCompatActivity {
         });
         enterUsername = findViewById(R.id.username);
         submitButton = findViewById(R.id.submit);
+        testCrash = findViewById(R.id.testCrash);
         resultTextView = findViewById(R.id.result);
-
+        testCrash.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                throw new RuntimeException("Test Crash"); // Force a crash
+            }
+        });
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -99,35 +105,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 // Handle database error
-//                Log.w(TAG, "loadPost:onCancelled", error.toException());
+                Log.w("TAG", "loadPost:onCancelled", error.toException());
             }
         });
-/*
-        myRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
-                HashMap<String, String> usermap = (HashMap<String, String>) dataSnapshot.getValue(new TypeToken<HashMap<String, String>>() {
-                }.getRawType());
-                StringBuilder builder = new StringBuilder();
-                for (String username : usermap.values()) {
-                    Log.d("TAG", "Value is: " + username);
-                    builder.append(username);
-                    builder.append("\n");
-
-                }
-                resultTextView.setText(builder.toString());
-//                Log.d("TAG", "Value is: " + value);
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-                // Failed to read value
-                Log.w("TAG", "Failed to read value.", error.toException());
-            }
-        });
-*/
 
 
     }

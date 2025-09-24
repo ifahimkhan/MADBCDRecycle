@@ -20,6 +20,13 @@
         android:layout_height="wrap_content"
         android:text="submit" />
 
+    <Button
+        android:layout_marginTop="16dp"
+        android:id="@+id/testCrash"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test Crash" />
+
     <TextView
         android:layout_marginTop="16dp"
         android:id="@+id/result"
