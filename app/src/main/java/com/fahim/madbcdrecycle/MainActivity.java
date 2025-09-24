@@ -1,28 +1,42 @@
 package com.fahim.madbcdrecycle;
 
 import android.os.Bundle;
-import android.widget.Toast;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.GenericTypeIndicator;
+import com.google.firebase.database.ValueEventListener;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    private RecyclerView recyclerView;
-    private VideoAdapter videoAdapter;
-    private List<VideoItem> videoList = new ArrayList<>();
+
+
+    EditText enterUsername;
+    Button submitButton;
+    TextView resultTextView;
+    // Write a message to the database
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
+    DatabaseReference myRef = database.getReference("users");
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -34,35 +48,89 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        enterUsername = findViewById(R.id.username);
+        submitButton = findViewById(R.id.submit);
+        resultTextView = findViewById(R.id.result);
 
-        recyclerView = findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        videoList = new ArrayList<>();
-        videoAdapter = new VideoAdapter(videoList);
-        recyclerView.setAdapter(videoAdapter);
-        fetchVideos();
-
-    }
-
-    private void fetchVideos() {
-        ApiService apiService = RetrofitClient.getInstance().getApiService();
-        Call<List<VideoItem>> call = apiService.getVideos();
-        call.enqueue(new Callback<List<VideoItem>>() {
+        submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onResponse(Call<List<VideoItem>> call, Response<List<VideoItem>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    videoList.addAll(response.body());
-                    videoAdapter.notifyDataSetChanged();
-                } else {
-                    Toast.makeText(MainActivity.this, "Failed to fetch videos", Toast.LENGTH_SHORT).show();
-                }
-            }
+            public void onClick(View view) {
+                final String username = enterUsername.getText().toString();
+                myRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<String> userList;
+                        if (snapshot.exists() && snapshot.getValue() != null) {
+                            userList = (List<String>) snapshot.getValue();
+                        } else {
+                            userList = new ArrayList<>();
+                        }
+                        userList.add(username);
+                        myRef.setValue(userList);
+                    }
 
-            @Override
-            public void onFailure(Call<List<VideoItem>> call, Throwable t) {
-
-                Toast.makeText(MainActivity.this, "Failed to fetch videos", Toast.LENGTH_SHORT).show();
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Log.w("TAG", "Failed to read value.", error.toException());
+                    }
+                });
             }
         });
+
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists() && snapshot.getValue() != null) {
+                    GenericTypeIndicator<List<String>> t = new GenericTypeIndicator<List<String>>() {};
+                    List<String> userList = snapshot.getValue(t);
+                    if (userList != null) {
+                        StringBuilder builder = new StringBuilder();
+                        for (String user : userList) {
+                            builder.append(user).append("\n");
+                        }
+                        resultTextView.setText(builder.toString());
+                    }
+                } else {
+                    resultTextView.setText("No users yet.");
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // Handle database error
+//                Log.w(TAG, "loadPost:onCancelled", error.toException());
+            }
+        });
+/*
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                // This method is called once with the initial value and again
+                // whenever data at this location is updated.
+                HashMap<String, String> usermap = (HashMap<String, String>) dataSnapshot.getValue(new TypeToken<HashMap<String, String>>() {
+                }.getRawType());
+                StringBuilder builder = new StringBuilder();
+                for (String username : usermap.values()) {
+                    Log.d("TAG", "Value is: " + username);
+                    builder.append(username);
+                    builder.append("\n");
+
+                }
+                resultTextView.setText(builder.toString());
+//                Log.d("TAG", "Value is: " + value);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                // Failed to read value
+                Log.w("TAG", "Failed to read value.", error.toException());
+            }
+        });
+*/
+
+
     }
+
+
 }
